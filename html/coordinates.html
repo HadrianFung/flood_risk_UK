@@ -1,0 +1,269 @@
+
+
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Distance Measuring &amp; Geodetic Transformations &#8212; Flood Tool  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css" />
+    
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Visualising Risk &amp; Rainfall" href="visualization.html" />
+    <link rel="prev" title="Regression and Classification models" href="models.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="visualization.html" title="Visualising Risk &amp; Rainfall"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="models.html" title="Regression and Classification models"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Flood Tool  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Distance Measuring &amp; Geodetic Transformations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="distance-measuring-geodetic-transformations">
+<h1>Distance Measuring &amp; Geodetic Transformations<a class="headerlink" href="#distance-measuring-geodetic-transformations" title="Permalink to this heading">¶</a></h1>
+<section id="distances-on-the-earth">
+<h2>Distances on the Earth<a class="headerlink" href="#distances-on-the-earth" title="Permalink to this heading">¶</a></h2>
+<p>To a first approximation, the Earth can be modelled as a sphere with a radius of 6371 km. This
+means that for points on the surface of the Earth at significant separation the
+surface distance between them (the great-circle distance) is uniquely defined by the angle between them at the centre of the
+Earth, and can be calculated using the Haversine formula <a class="footnote-reference brackets" href="#id5" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>,</p>
+<div class="math notranslate nohighlight">
+\[d = 2r\arcsin\left(\sqrt{\sin^2\left(\frac{\phi_2-\phi_1}{2}\right)+\cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\lambda_2-\lambda_1}{2}\right)}\right)\]</div>
+<p>where <span class="math notranslate nohighlight">\(\phi\)</span> and <span class="math notranslate nohighlight">\(\lambda\)</span> are latitude and longitude respectively,
+and <span class="math notranslate nohighlight">\(r\)</span> is the radius of the Earth.</p>
+<p>Where the points are very close together, the Haversine formula as given above is not
+accurate for numerical calculations. In this case, the distance can be approximated by the Pythagorean
+theorem, using the latitude and longitude as Cartesian coordinates. This is
+only valid for small distances, but is much faster to calculate.</p>
+<div class="math notranslate nohighlight">
+\[d = r\sqrt{(x_1-x_2)^2+(y_1-y_2)^2}\]</div>
+<p>For intermediate distances, we can use
+an iterative method such as the Vincenty formula, which takes into account the squashing of the Earth towards the poles
+However, especially where more than two points are involved,
+we may be better off using a projection method to transform the local band of latitude and longitude into a flat
+2D surface.</p>
+</section>
+<section id="leveraging-projections">
+<h2>Leveraging Projections<a class="headerlink" href="#leveraging-projections" title="Permalink to this heading">¶</a></h2>
+<p>Although the surface of the Earth is curved, for many purposes we can treat it
+as locally flat. This is the basis of most map projections, which transform
+latitude and longitude coordinates on the surface of the Earth to a flat
+two-dimensional Cartesian coordinate system. This has many advantages for
+concepts such as calculating distances, applying clustering algorithms and
+visualising data, including in maps.</p>
+<section id="the-ordnance-survey-national-grid">
+<h3>The Ordnance Survey National Grid<a class="headerlink" href="#the-ordnance-survey-national-grid" title="Permalink to this heading">¶</a></h3>
+<p>For historical reasons, multiple coordinate systems exist in British mapping.
+The Ordnance Survey has been mapping the British Isles since the 18th Century
+and the last major retriangulation from 1936-1962 produced the Ordance Survey
+National Grid (or <strong>OSGB36</strong>), which defined latitude and longitude across the
+island of Great Britain <a class="footnote-reference brackets" href="#id6" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a>. For convenience, a standard Transverse Mercator
+projection <a class="footnote-reference brackets" href="#id7" id="id3" role="doc-noteref"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></a> was also defined, producing a notionally flat gridded surface,
+with gradations called eastings and westings. The scale for these gradations
+was identified with metres. To a good approximation, the Pythagorean theorem
+can be used to calculate distances on this grid.</p>
+<div class="math notranslate nohighlight">
+\[d = \sqrt{(E_1-E_2)^2+(N_1-N_2)^2}\]</div>
+<p>The OSGB36 datum is based on the Airy Ellipsoid of 1830, which defines
+semimajor axes for its model of the earth, <span class="math notranslate nohighlight">\(a\)</span> and <span class="math notranslate nohighlight">\(b\)</span>, a scaling
+factor <span class="math notranslate nohighlight">\(F_0\)</span> and ellipsoid height, <span class="math notranslate nohighlight">\(H\)</span>.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}a &amp;= 6377563.396, \\
+b &amp;= 6356256.910, \\
+F_0 &amp;= 0.9996012717, \\
+H &amp;= 24.7.\end{split}\]</div>
+<p>The point of origin for the transverse Mercator projection is defined in the
+Ordnance Survey longitude-latitude and easting-northing coordinates as</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\phi^{OS}_0 &amp;= 49^\circ \mbox{ north}, \\
+\lambda^{OS}_0 &amp;= 2^\circ \mbox{ west}, \\
+E^{OS}_0 &amp;= 400000 m, \\
+N^{OS}_0 &amp;= -100000 m.\end{split}\]</div>
+</section>
+<section id="gps-and-the-wgs84-datum">
+<h3>GPS and the WGS84 Datum<a class="headerlink" href="#gps-and-the-wgs84-datum" title="Permalink to this heading">¶</a></h3>
+<p>More recently, the world has gravitated towards the use of the satellite based
+Global Positioning Systems (GPS) for navigation and location. This
+equipment, uses the (globally more appropriate) World Geodetic System
+1984 (or <strong>WGS84</strong>). This datum uses a different ellipsoid, which offers a
+better fit for a global coordinate system. Its key properties are:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}a_{WGS} &amp;= 6378137,, \\
+b_{WGS} &amp;= 6356752.314, \\
+F_0 &amp;= 0.9996.\end{split}\]</div>
+<p>For a given point on the WGS84 ellipsoid, an approximate mapping to the
+OSGB36 datum can be found using a Helmert transformation <a class="footnote-reference brackets" href="#id8" id="id4" role="doc-noteref"><span class="fn-bracket">[</span>4<span class="fn-bracket">]</span></a>,</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{x}^{OS} = \mathbf{t}+\mathbf{M}\mathbf{x}^{WGS}.\]</div>
+<p>Here <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> denotes a coordinate in Cartesian space (i.e in 3D)
+as given by the (invertible) transformation</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\nu &amp;= \frac{aF_0}{\sqrt{1-e^2\sin^2(\phi^{OS})}} \\
+x &amp;= (\nu+H) \sin(\lambda)\cos(\phi) \\
+y &amp;= (\nu+H) \cos(\lambda)\cos(\phi) \\
+z &amp;= ((1-e^2)\nu+H)\sin(\phi)\end{split}\]</div>
+<p>and the transformation parameters are</p>
+<div class="math notranslate nohighlight">
+\begin{eqnarray*}
+\mathbf{t} &amp;= \left(\begin{array}{c}
+-446.448\\ 125.157\\ -542.060
+\end{array}\right),\\
+\mathbf{M} &amp;= \left[\begin{array}{ c c c }
+1+s&amp; -r_3&amp; r_2\\
+r_3 &amp; 1+s &amp; -r_1 \\
+-r_2 &amp; r_1 &amp; 1+s
+\end{array}\right], \\
+s &amp;= 20.4894\times 10^{-6}, \\
+\mathbf{r} &amp;= [0.1502'', 0.2470'', 0.8421''].
+\end{eqnarray*}</div><p>Given a latitude, <span class="math notranslate nohighlight">\(\phi^{OS}\)</span> and longitude, <span class="math notranslate nohighlight">\(\lambda^{OS}\)</span> in the
+OSGB36 datum, easting and northing coordinates, <span class="math notranslate nohighlight">\(E^{OS}\)</span> &amp; <span class="math notranslate nohighlight">\(N^{OS}\)</span>
+can then be calculated using the following formulae:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\rho &amp;= \frac{aF_0(1-e^2)}{\left(1-e^2\sin^2(\phi^{OS})\right)^{\frac{3}{2}}} \\
+\eta &amp;= \sqrt{\frac{\nu}{\rho}-1} \\
+M &amp;= bF_0\left[\left(1+n+\frac{5}{4}n^2+\frac{5}{4}n^3\right)(\phi^{OS}-\phi^{OS}_0)\right. \\
+&amp;\quad-\left(3n+3n^2+\frac{21}{8}n^3\right)\sin(\phi-\phi_0)\cos(\phi^{OS}+\phi^{OS}_0) \\
+&amp;\quad+\left(\frac{15}{8}n^2+\frac{15}{8}n^3\right)\sin(2(\phi^{OS}-\phi^{OS}_0))\cos(2(\phi^{OS}+\phi^{OS}_0)) \\
+&amp;\left.\quad-\frac{35}{24}n^3\sin(3(\phi-\phi_0))\cos(3(\phi^{OS}+\phi^{OS}_0))\right] \\
+I &amp;= M + N^{OS}_0 \\
+II &amp;= \frac{\nu}{2}\sin(\phi^{OS})\cos(\phi^{OS}) \\
+III &amp;= \frac{\nu}{24}\sin(\phi^{OS})cos^3(\phi^{OS})(5-\tan^2(phi^{OS})+9\eta^2) \\
+IIIA &amp;= \frac{\nu}{720}\sin(\phi^{OS})cos^5(\phi^{OS})(61-58\tan^2(\phi^{OS})+\tan^4(\phi^{OS})) \\
+IV &amp;= \nu\cos(\phi^{OS}) \\
+V &amp;= \frac{\nu}{6}\cos^3(\phi^{OS})\left(\frac{\nu}{\rho}-\tan^2(\phi^{OS})\right) \\
+VI &amp;= \frac{\nu}{120}\cos^5(\phi^{OS})(5-18\tan^2(\phi^{OS})+\tan^4(\phi^{OS}) \\
+&amp;\quad+14\eta^2-58\tan^2(\phi^{OS})\eta^2) \\
+E^{OS} &amp;= E^{OS}_0+IV(\lambda^{OS}-\lambda^{OS}_0)+V(\lambda-\lambda^{OS}_0)^3+VI(\lambda^{OS}-\lambda^{OS}_0)^5 \\
+N^{OS} &amp;= I + II(\lambda^{OS}-\lambda^{OS}_0)^2+III(\lambda-\lambda^{OS}_0)^4+IIIA(\lambda^{OS}-\lambda^{OS}_0)^6\end{split}\]</div>
+<p class="rubric">References</p>
+<aside class="footnote brackets" id="id5" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<p>The Haversine formula <a class="reference external" href="https://en.wikipedia.org/wiki/Haversine_formula">https://en.wikipedia.org/wiki/Haversine_formula</a></p>
+</aside>
+<aside class="footnote brackets" id="id6" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">2</a><span class="fn-bracket">]</span></span>
+<p>A guide to coordinate systems in Great Britain, Ordnance Survey</p>
+</aside>
+<aside class="footnote brackets" id="id7" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">3</a><span class="fn-bracket">]</span></span>
+<p>Map projections - A Working Manual, John P. Snyder, <a class="reference external" href="https://doi.org/10.3133/pp1395">https://doi.org/10.3133/pp1395</a></p>
+</aside>
+<aside class="footnote brackets" id="id8" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id4">4</a><span class="fn-bracket">]</span></span>
+<p>Computing Helmert transformations, G Watson, <a class="reference external" href="http://www.maths.dundee.ac.uk/gawatson/helmertrev.pdf">http://www.maths.dundee.ac.uk/gawatson/helmertrev.pdf</a></p>
+</aside>
+</section>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Distance Measuring &amp; Geodetic Transformations</a><ul>
+<li><a class="reference internal" href="#distances-on-the-earth">Distances on the Earth</a></li>
+<li><a class="reference internal" href="#leveraging-projections">Leveraging Projections</a><ul>
+<li><a class="reference internal" href="#the-ordnance-survey-national-grid">The Ordnance Survey National Grid</a></li>
+<li><a class="reference internal" href="#gps-and-the-wgs84-datum">GPS and the WGS84 Datum</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="models.html"
+                          title="previous chapter">Regression and Classification models</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="visualization.html"
+                          title="next chapter">Visualising Risk &amp; Rainfall</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/coordinates.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="visualization.html" title="Visualising Risk &amp; Rainfall"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="models.html" title="Regression and Classification models"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Flood Tool  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Distance Measuring &amp; Geodetic Transformations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright .
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>
